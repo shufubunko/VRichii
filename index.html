@@ -179,34 +179,57 @@ db.auth.onAuthStateChange((event, session) => {
   }
 });
 
+
 document.querySelector("#test-link").onclick = async () => {
-  status.textContent = "Checking your player session...";
+  const button = document.querySelector("#test-link");
+
+  button.disabled = true;
+  status.textContent = "Preparing secure itch.io linking...";
 
   try {
+    // Ask our authenticated Supabase function
+    // to create a temporary linking ticket.
     const { data, error } = await db.functions.invoke(
       "itch-link-prepare",
       { body: {} }
     );
 
-    if (error) {
-      console.error("Link preparation error:", error);
+    if (error || !data?.prepared ||
+        typeof data.launch_ticket !== "string") {
       status.textContent =
-        "Account linking test failed. Check the console.";
+        "Could not prepare account linking.";
+      button.disabled = false;
       return;
     }
 
-    if (data?.prepared === true) {
-      status.textContent =
-        "Success! Your player account was verified.";
-    } else {
-      status.textContent =
-        data?.error || "Unexpected server response.";
-    }
+    // Submit the ticket through HTTPS POST.
+    // Do not put the ticket in a URL or save it.
+    const form = document.createElement("form");
+
+    form.method = "POST";
+    form.action =
+      "https://wetnwnwkeednykajzqqs.supabase.co" +
+      "/functions/v1/itch-link-launch";
+
+    const field = document.createElement("input");
+    field.type = "hidden";
+    field.name = "launch_ticket";
+    field.value = data.launch_ticket;
+
+    form.appendChild(field);
+    document.body.appendChild(form);
+
+    status.textContent = "Redirecting to itch.io...";
+    form.submit();
+
   } catch (error) {
-    console.error(error);
-    status.textContent = "Could not contact the server.";
+    console.error("Account linking failed");
+    status.textContent =
+      "Unable to start itch.io account linking.";
+    button.disabled = false;
   }
 };
+
 
 initialize();
 </script>
