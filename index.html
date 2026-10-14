@@ -159,6 +159,21 @@ async function initialize() {
   }
 }
 
+db.auth.onAuthStateChange((event, session) => {
+  if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+    showUser(session?.user ?? null);
+
+    if (session?.user) {
+      status.textContent = "Google login successful!";
+    }
+  }
+
+  if (event === "SIGNED_OUT") {
+    showUser(null);
+    status.textContent = "Signed out successfully.";
+  }
+});
+
 initialize();
 </script>
 </body>
