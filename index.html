@@ -59,6 +59,11 @@
   <section id="account">
     <h2>Welcome back!</h2>
     <p id="details"></p>
+    
+<button id="test-link">
+  Test itch.io Account Linking
+</button>
+
     <button id="logout">Sign Out</button>
   </section>
 
@@ -173,6 +178,35 @@ db.auth.onAuthStateChange((event, session) => {
     status.textContent = "Signed out successfully.";
   }
 });
+
+document.querySelector("#test-link").onclick = async () => {
+  status.textContent = "Checking your player session...";
+
+  try {
+    const { data, error } = await db.functions.invoke(
+      "itch-link-prepare",
+      { body: {} }
+    );
+
+    if (error) {
+      console.error("Link preparation error:", error);
+      status.textContent =
+        "Account linking test failed. Check the console.";
+      return;
+    }
+
+    if (data?.prepared === true) {
+      status.textContent =
+        "Success! Your player account was verified.";
+    } else {
+      status.textContent =
+        data?.error || "Unexpected server response.";
+    }
+  } catch (error) {
+    console.error(error);
+    status.textContent = "Could not contact the server.";
+  }
+};
 
 initialize();
 </script>
